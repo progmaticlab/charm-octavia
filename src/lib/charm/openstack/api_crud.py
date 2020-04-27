@@ -403,6 +403,7 @@ def setup_hm_port(identity_service, octavia_charm, host_id=None):
     :rtype: bool
     :raises: api_crud.APIUnavailable, api_crud.DuplicateResource
     """
+    return
     unit_changed = False
     hm_port = get_hm_port(
         identity_service,
