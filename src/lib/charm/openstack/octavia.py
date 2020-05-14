@@ -97,6 +97,11 @@ def health_manager_bind_ip(cls):
     :returns: IP address of unit local Health Manager interface.
     :rtype: str
     """
+
+    # -> contrail addition
+    return ch_net_ip.get_host_ip(ch_core.hookenv.unit_get('private-address'))
+    # <- contrail addition
+
     ip_list = []
     for af in ['AF_INET6', 'AF_INET']:
         try:
@@ -143,6 +148,11 @@ def controller_ip_port_list(cls):
     :returns: Comma separated list of ip:port pairs.
     :rtype: str
     """
+
+    # -> contrail addition
+    return ch_net_ip.get_host_ip(ch_core.hookenv.unit_get('private-address')) + ':' + OCTAVIA_HEALTH_LISTEN_PORT
+    # <- contrail addition
+
     try:
         ip_list = json.loads(
             leadership.leader_get('controller-ip-port-list'))
