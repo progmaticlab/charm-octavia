@@ -99,7 +99,7 @@ def health_manager_bind_ip(cls):
     """
 
     # -> contrail addition
-    return ch_net_ip.get_host_ip(ch_core.hookenv.unit_get('private-address'))
+    return ch_net_ip.get_host_ip(ch_core.hookenv.network_get("public")["ingress-addresses"][0])
     # <- contrail addition
 
     ip_list = []
@@ -150,7 +150,7 @@ def controller_ip_port_list(cls):
     """
 
     # -> contrail addition
-    return ch_net_ip.get_host_ip(ch_core.hookenv.unit_get('private-address')) + ':' + OCTAVIA_HEALTH_LISTEN_PORT
+    return ch_net_ip.get_host_ip(ch_core.hookenv.network_get("public")["ingress-addresses"][0]) + ':' + OCTAVIA_HEALTH_LISTEN_PORT
     # <- contrail addition
 
     try:
