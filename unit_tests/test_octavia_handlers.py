@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import json
 import mock
 
@@ -62,10 +59,16 @@ class TestRegisteredHooks(test_utils.TestRegisteredHooks):
                     'identity-service.connected',),
                 'maybe_enable_ovn_driver': (
                     'ovsdb-subordinate.available',),
+                'update_nagios': (
+                    'charm.installed',
+                    'nrpe-external-master.available',),
             },
             'when_any': {
                 'sdn_joined': ('neutron-openvswitch.connected',
                                'ovsdb-subordinate.available'),
+                'nagios_config_changed': (
+                    'config.changed.nagios_context',
+                    'config.changed.nagios_servicegroups'),
             },
             'when_none': {
                 'sdn_broken': ('neutron-openvswitch.connected',
@@ -76,6 +79,10 @@ class TestRegisteredHooks(test_utils.TestRegisteredHooks):
                 'cluster_connected': ('ha.available',),
                 'generate_heartbeat_key': ('leadership.set.heartbeat-key',),
                 'disable_ovn_driver': ('ovsdb-subordinate.available',),
+                'update_nagios': ('octavia.nrpe.configured',),
+            },
+            'hook': {
+                'upgrade_charm': ('upgrade-charm',),
             },
         }
         # test that the hooks were registered via the
@@ -216,3 +223,26 @@ class TestOctaviaHandlers(test_utils.PatchHelper):
             'charm.octavia.enable-ovn-driver')
         self.octavia_charm.install.assert_called_once_with()
         self.octavia_charm.assess_status.assert_called_once_with()
+
+    def test_update_nagios(self):
+        self.patch_object(handlers.nrpe, 'get_nagios_unit_name',
+                          return_value=mock.sentinel.unit_name)
+        nrpe_instance = mock.MagicMock()
+        self.patch_object(handlers.nrpe, 'NRPE', return_value=nrpe_instance)
+        self.patch_object(handlers.nrpe, 'add_init_service_checks')
+        self.patch('charms.reactive.set_state')
+        handlers.update_nagios()
+        self.add_init_service_checks.assert_called_once_with(
+            nrpe_instance, self.octavia_charm.full_service_list,
+            mock.sentinel.unit_name)
+        nrpe_instance.write.assert_called_once()
+        self.set_state.assert_called_once_with('octavia.nrpe.configured')
+
+    def test_nagios_config_changed(self):
+        self.patch('charms.reactive.remove_state')
+        handlers.nagios_config_changed()
+        self.remove_state.assert_any_call('octavia.nrpe.configured')
+        self.remove_state.assert_any_call('config.changed.nagios_context')
+        self.remove_state.assert_any_call(
+            'config.changed.nagios_servicegroups')
+        self.assertEqual(self.remove_state.call_count, 3)

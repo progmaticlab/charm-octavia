@@ -15,6 +15,7 @@
 
 import os
 import sys
+import traceback
 
 # Load modules from $CHARM_DIR/lib
 sys.path.append('lib')
@@ -84,6 +85,13 @@ def configure_resources(*args):
             'identity-service.available')
         api_crud.create_nova_keypair(identity_service, amp_key_name)
 
+    # Set qutotas to unlimited
+    try:
+        api_crud.set_service_quotas_unlimited(identity_service)
+    except api_crud.APIUnavailable as e:
+        ch_core.hookenv.action_fail('Unbable to set quotas to unlimited: {}'
+                                    .format(e))
+
     # execute port setup for leader, the followers will execute theirs on
     # `leader-settings-changed` hook
     with charm.provide_charm_instance() as octavia_charm:
@@ -107,6 +115,10 @@ def main(args):
         try:
             action(args)
         except Exception as e:
+            ch_core.hookenv.log('action "{}" failed: "{}" "{}"'
+                                .format(action_name, str(e),
+                                        traceback.format_exc()),
+                                level=ch_core.hookenv.ERROR)
             ch_core.hookenv.action_fail(str(e))
 
 

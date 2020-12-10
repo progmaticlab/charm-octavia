@@ -38,91 +38,84 @@ relations:
   - nova-cloud-controller:neutron-api
 - - neutron-api:neutron-load-balancer
   - octavia:neutron-api
-- - rabbitmq-server:amqp
-  - neutron-openvswitch:amqp
-- - neutron-api:neutron-plugin-api
-  - neutron-openvswitch:neutron-plugin-api
-- - neutron-openvswitch:neutron-plugin
-  - nova-compute:neutron-plugin
-- - rabbitmq-server:amqp
-  - neutron-openvswitch-octavia:amqp
-- - neutron-api:neutron-plugin-api
-  - neutron-openvswitch-octavia:neutron-plugin-api
-- - neutron-openvswitch-octavia:neutron-plugin
-  - octavia:neutron-openvswitch
-- - hacluster-octavia:ha
-  - octavia:ha
 - - glance-simplestreams-sync:juju-info
   - octavia-diskimage-retrofit:juju-info
 - - keystone:identity-service
   - glance-simplestreams-sync:identity-service
 - - keystone:identity-credentials
   - octavia-diskimage-retrofit:identity-credentials
+- [ placement, mysql ]
+- [ placement, keystone ]
+- [ placement, nova-cloud-controller ]
+- - neutron-api-plugin-ovn:neutron-plugin
+  - neutron-api:neutron-plugin-api-subordinate
 - - vault:shared-db
   - mysql:shared-db
+- - ovn-central:certificates
+  - vault:certificates
+- - ovn-central:ovsdb-cms
+  - neutron-api-plugin-ovn:ovsdb-cms
+- - neutron-api:certificates
+  - vault:certificates
+- - ovn-chassis:nova-compute
+  - nova-compute:neutron-plugin
+- - ovn-chassis:ovsdb-subordinate
+  - octavia:ovsdb-subordinate
+- - ovn-central:ovsdb-cms
+  - octavia:ovsdb-cms
+- - ovn-chassis:certificates
+  - vault:certificates
+- - ovn-chassis:ovsdb
+  - ovn-central:ovsdb
+- - vault:certificates
+  - neutron-api-plugin-ovn:certificates
 - - vault:certificates
   - glance:certificates
 - - vault:certificates
   - keystone:certificates
 - - vault:certificates
-  - neutron-api:certificates
-- - vault:certificates
   - nova-cloud-controller:certificates
+- - vault:certificates
+  - placement:certificates
 - - vault:certificates
   - octavia:certificates
 - - vault:certificates
   - glance-simplestreams-sync:certificates
-- - vault:certificates
-  - octavia-diskimage-retrofit:certificates
+- - hacluster-octavia:ha
+  - octavia:ha
 applications:
   glance:
     charm: cs:~openstack-charmers-next/glance
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
   keystone:
     charm: cs:~openstack-charmers-next/keystone
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
   mysql:
     constraints: mem=3072M
     charm: cs:~openstack-charmers-next/percona-cluster
     num_units: 1
   neutron-api:
+    constraints: cores=4
     charm: cs:~openstack-charmers-next/neutron-api
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      # NOTE(fnordahl): At current state of upstream Neutron development this
+      # is a requirement.  Remove once fixed upstream.
+      enable-ml2-port-security: true
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
       flat-network-providers: physnet1
       neutron-security-groups: True
-      enable-dvr: True
-  neutron-openvswitch:
-    series: bionic
-    charm: cs:~openstack-charmers-next/neutron-openvswitch
-    num_units: 0
-    options:
-      debug: True
-      enable-local-dhcp-and-metadata: True
-      use-dvr-snat: True
-      prevent-arp-spoofing: False
-      firewall-driver: openvswitch
-      bridge-mappings: physnet1:br-ex
-  neutron-openvswitch-octavia:
-    series: bionic
-    charm: cs:~openstack-charmers-next/neutron-openvswitch
-    num_units: 0
-    options:
-      debug: True
-      prevent-arp-spoofing: False
-      firewall-driver: openvswitch
   nova-cloud-controller:
     constraints: mem=3072M
     charm: cs:~openstack-charmers-next/nova-cloud-controller
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
       network-manager: Neutron
   nova-compute:
@@ -130,21 +123,20 @@ applications:
     charm: cs:~openstack-charmers-next/nova-compute
     num_units: 4
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
   hacluster-octavia:
+    series: bionic
     charm: cs:~openstack-charmers-next/hacluster
-    num_units: 0
   octavia:
     series: bionic
     charm: ../../../octavia
     num_units: 3
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
       spare-pool-size: 2
       loadbalancer-topology: 'ACTIVE_STANDBY'
-      vip: 'ADD YOUR VIP HERE'
   rabbitmq-server:
     charm: cs:~openstack-charmers-next/rabbitmq-server
     num_units: 1
@@ -158,8 +150,25 @@ applications:
     charm: cs:~openstack-charmers-next/octavia-diskimage-retrofit
     options:
       amp-image-tag: 'octavia-amphora'
-      retrofit-uca-pocket: stein
+      retrofit-uca-pocket: ussuri
       retrofit-series: bionic
+  placement:
+    charm: cs:~openstack-charmers-next/placement
+    num_units: 1
+    constraints: mem=1G
+    options:
+      openstack-origin: cloud:bionic-ussuri/proposed
+      debug: true
+  neutron-api-plugin-ovn:
+    charm: cs:~openstack-charmers-next/neutron-api-plugin-ovn
+  ovn-central:
+    constraints: mem=3072M
+    charm: cs:~openstack-charmers-next/ovn-central
+    num_units: 3
+    options:
+      source: cloud:bionic-ussuri/proposed
+  ovn-chassis:
+    charm: cs:~openstack-charmers-next/ovn-chassis
   vault:
     charm: cs:~openstack-charmers-next/vault
     num_units: 1

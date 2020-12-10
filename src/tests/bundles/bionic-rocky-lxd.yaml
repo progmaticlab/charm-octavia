@@ -63,8 +63,6 @@ relations:
   - octavia-diskimage-retrofit:juju-info
 - - keystone:identity-service
   - glance-simplestreams-sync:identity-service
-- - rabbitmq-server:amqp
-  - glance-simplestreams-sync:amqp
 - - keystone:identity-credentials
   - octavia-diskimage-retrofit:identity-credentials
 - - vault:shared-db
@@ -79,6 +77,8 @@ relations:
   - nova-cloud-controller:certificates
 - - vault:certificates
   - octavia:certificates
+- - vault:certificates
+  - glance-simplestreams-sync:certificates
 - - vault:certificates
   - octavia-diskimage-retrofit:certificates
 applications:
@@ -180,6 +180,7 @@ applications:
     charm: cs:~openstack-charmers-next/octavia-diskimage-retrofit
     options:
       amp-image-tag: 'octavia-amphora'
+      retrofit-series: bionic
   vault:
     charm: cs:~openstack-charmers-next/vault
     num_units: 1

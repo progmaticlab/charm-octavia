@@ -58,6 +58,9 @@ relations:
   - glance-simplestreams-sync:identity-service
 - - keystone:identity-credentials
   - octavia-diskimage-retrofit:identity-credentials
+- [ placement, mysql ]
+- [ placement, keystone ]
+- [ placement, nova-cloud-controller ]
 - - vault:shared-db
   - mysql:shared-db
 - - vault:certificates
@@ -71,20 +74,22 @@ relations:
 - - vault:certificates
   - octavia:certificates
 - - vault:certificates
+  - octavia-diskimage-retrofit:certificates
+- - vault:certificates
   - glance-simplestreams-sync:certificates
 - - vault:certificates
-  - octavia-diskimage-retrofit:certificates
+  - placement:certificates
 applications:
   glance:
     charm: cs:~openstack-charmers-next/glance
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
   keystone:
     charm: cs:~openstack-charmers-next/keystone
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
   mysql:
     constraints: mem=3072M
     charm: cs:~openstack-charmers-next/percona-cluster
@@ -93,11 +98,12 @@ applications:
     charm: cs:~openstack-charmers-next/neutron-api
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
       flat-network-providers: physnet1
       neutron-security-groups: True
       enable-dvr: True
+      manage-neutron-plugin-legacy-mode: True
   neutron-openvswitch:
     series: bionic
     charm: cs:~openstack-charmers-next/neutron-openvswitch
@@ -122,7 +128,7 @@ applications:
     charm: cs:~openstack-charmers-next/nova-cloud-controller
     num_units: 1
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
       network-manager: Neutron
   nova-compute:
@@ -130,7 +136,7 @@ applications:
     charm: cs:~openstack-charmers-next/nova-compute
     num_units: 4
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
   hacluster-octavia:
     charm: cs:~openstack-charmers-next/hacluster
@@ -140,7 +146,7 @@ applications:
     charm: ../../../octavia
     num_units: 3
     options:
-      openstack-origin: cloud:bionic-stein
+      openstack-origin: cloud:bionic-ussuri/proposed
       debug: True
       spare-pool-size: 2
       loadbalancer-topology: 'ACTIVE_STANDBY'
@@ -158,8 +164,15 @@ applications:
     charm: cs:~openstack-charmers-next/octavia-diskimage-retrofit
     options:
       amp-image-tag: 'octavia-amphora'
-      retrofit-uca-pocket: stein
+      retrofit-uca-pocket: ussuri
       retrofit-series: bionic
+  placement:
+    charm: cs:~openstack-charmers-next/placement
+    num_units: 1
+    constraints: mem=1G
+    options:
+      openstack-origin: cloud:bionic-ussuri/proposed
+      debug: true
   vault:
     charm: cs:~openstack-charmers-next/vault
     num_units: 1
